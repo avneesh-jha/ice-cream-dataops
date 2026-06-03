@@ -1,0 +1,54 @@
+workflowExternalId: wf_icapi_data_pipeline
+version: '1'
+workflowDefinition:
+  tasks:
+  - externalId: create_asset_hierarchy_task
+    type: transformation
+    parameters:
+      transformation:
+        externalId: create_asset_hierarchy
+        concurrencyPolicy: fail
+    name: 'Task One - Create Asset Hierarchy Transformation'
+    description: First task is to create the asset hierarchy transformation
+    retries: 3
+    timeout: 3600
+    onFailure: abortWorkflow
+  - externalId: contextualize_ts_assets_task
+    type: transformation
+    parameters:
+      transformation:
+        externalId: contextualize_ts_assets
+        concurrencyPolicy: fail
+    name: 'Task Two - Contextualize TS Assets Transformation'
+    description: Second task is to contextualize ts assets transformation
+    retries: 3
+    timeout: 3600
+    onFailure: abortWorkflow
+    dependsOn:
+      - externalId: create_asset_hierarchy_task
+  - externalId: icapi_datapoints_extractor_task
+    type: function
+    parameters:
+      function:
+        externalId: icapi_datapoints_extractor
+        data: { "hours": 1 }
+    name: 'Task Three - IC API Datapoints Extractor Function'
+    description: Third task is to call the IC API Datapoints Extractor Function
+    retries: 3
+    timeout: 3600
+    onFailure: abortWorkflow
+    dependsOn:
+      - externalId: contextualize_ts_assets_task
+  - externalId: oee_timeseries_task
+    type: function
+    parameters:
+      function:
+        externalId: oee_timeseries
+        data: {}
+    name: 'Task Four - OEE Timeseries Function'
+    description: Fourth task is to call the OEE Timeseries Function
+    retries: 3
+    timeout: 3600
+    onFailure: abortWorkflow
+    dependsOn:
+      - externalId: icapi_datapoints_extractor_task
